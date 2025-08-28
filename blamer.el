@@ -129,7 +129,8 @@ This types are used only for single line blame.
                  (const :tag "Pretty posframe popup" posframe-popup)
                  (const :tag "Visual and selected" both)
                  (const :tag "Margin overlay" margin-overlay)
-                 (const :tag "Selected only" selected)))
+                 (const :tag "Selected only" selected)
+                 (const :tag "Echo area" echo-area)))
 
 (defcustom blamer--overlay-popup-position 'bottom
   "Position of rendered popup.
@@ -878,6 +879,11 @@ Return list of strings."
     (overlay-put ov 'window (get-buffer-window))
     (add-to-list 'blamer--overlays ov)))
 
+(defun blamer--render-echo-area (commit-info)
+  (let* ((popup (string-trim (blamer--create-popup-msg commit-info t)))
+         (msg (substring-no-properties popup)))
+    (message msg)))
+
 (defun blamer--render-right-overlay (commit-info render-point)
   "Render COMMIT-INFO as overlay at RENDER-POINT position."
   (when-let ((ov (progn (move-end-of-line nil)
@@ -943,6 +949,7 @@ when not provided `blamer-type' will be used."
   (with-current-buffer buffer
     (save-excursion
       (cond ((eq (or type blamer-type) 'overlay-popup) (blamer--render-overlay-popup commit-info))
+            ((eq (or type blamer-type) 'echo-area) (blamer--render-echo-area commit-info))
             ((eq (or type blamer-type) 'posframe-popup) (blamer--render-posframe-popup commit-info))
             ((eq (or type blamer-type) 'margin-overlay) (blamer--render-margin-overlay commit-info render-point))
             (t (blamer--render-right-overlay commit-info render-point))))))
@@ -1051,7 +1058,8 @@ Optional TYPE argument will override global `blamer-type'."
   (let ((blamer-type (or type blamer-type))
         (long-region-p (blamer--long-region-p)))
     (unless (or (and (or (eq blamer-type 'overlay-popup)
-                         (eq blamer-type 'visual))
+                         (eq blamer-type 'visual)
+                         (eq blamer-type 'echo-area))
                      (use-region-p))
                 long-region-p
                 blamer--block-render-p)
@@ -1096,7 +1104,8 @@ LOCAL-TYPE is force replacement of current `blamer-type' for handle rendering."
                    (eq type 'margin-overlay)
                    (and (eq type 'visual) (not (use-region-p)))
                    (and (eq type 'overlay-popup) (not (use-region-p)))
-                   (and (eq type 'selected) (use-region-p)))
+                   (and (eq type 'selected) (use-region-p))
+                   (eq type 'echo-area))
                (or (not blamer--previous-line-number)
                    (not (eq blamer--previous-window-width (blamer--real-window-width)))
                    (not (eq blamer--previous-line-number (line-number-at-pos)))
