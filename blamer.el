@@ -41,8 +41,8 @@
 
 (defconst blamer--regexp-info
   (concat "^\\(?1:[^ ]*\\) \\(?5:[^ ]* \\)?(\\(?2:.*\\)"
-	        "\s\\(?3:[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\)"
-	        "\s\\(?4:[0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}\\)")
+	      "\s\\(?3:[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\)"
+	      "\s\\(?4:[0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}\\)")
 
   "Regexp for extract data from blame message.
 1 - commit hash
@@ -112,6 +112,16 @@
 Will add additional space for each BLAMER-OFFSET-PER-SYMBOL"
   :group 'blamer
   :type 'integer)
+
+(defcustom blamer-echo-area-inset 3
+  ""
+  :group 'blamer
+  :type 'integer)
+
+(defcustom blamer-echo-area-strip-face-attributes '(:background)
+  ""
+  :group 'blamer
+  :type '(repeat face-attribute))
 
 (defcustom blamer-type 'both
   "Type of blamer.
@@ -880,9 +890,21 @@ Return list of strings."
     (add-to-list 'blamer--overlays ov)))
 
 (defun blamer--render-echo-area (commit-info)
-  (let* ((popup (string-trim (blamer--create-popup-msg commit-info t)))
-         (msg (substring-no-properties popup)))
-    (message msg)))
+  (let* ((msg (blamer--format-commit-info (plist-get commit-info :commit-hash)
+                                          (plist-get commit-info :commit-message)
+                                          (plist-get commit-info :commit-author)
+                                          (plist-get commit-info :commit-date)
+                                          (plist-get commit-info :commit-time)
+                                          0
+                                          commit-info))
+         (msg (substring msg blamer-echo-area-inset))
+         (face-props (get-text-property 0 'face msg)))
+
+    (dolist (prop blamer-echo-area-strip-face-attributes  nil)
+      (plist-put face-props prop (face-attribute 'default prop)))
+    (put-text-property 0 (length msg) 'face face-props msg)
+
+    (message "%s" msg)))
 
 (defun blamer--render-right-overlay (commit-info render-point)
   "Render COMMIT-INFO as overlay at RENDER-POINT position."
