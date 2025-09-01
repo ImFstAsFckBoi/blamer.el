@@ -113,16 +113,6 @@ Will add additional space for each BLAMER-OFFSET-PER-SYMBOL"
   :group 'blamer
   :type 'integer)
 
-(defcustom blamer-echo-area-inset 3
-  ""
-  :group 'blamer
-  :type 'integer)
-
-(defcustom blamer-echo-area-strip-face-attributes '(:background)
-  ""
-  :group 'blamer
-  :type '(repeat face-attribute))
-
 (defcustom blamer-type 'both
   "Type of blamer.
 \\='visual - show blame only for current line
@@ -336,6 +326,21 @@ May be useful in some cases where the accuser unexpectedly
 moves to the next line."
   :group 'blamer
   :type 'integer)
+
+(defcustom blamer-echo-area-inset 3
+  "Number of prefix characters to remove from the formatted
+commit message in echo-area. This is a workaround to use the same format
+for both overlay and echo-area, while both look good."
+  :group 'blamer
+  :type 'integer)
+
+(defcustom blamer-echo-area-strip-face-attributes '(:background)
+  "A list of face-attributes to remove when printing COMMIT-INFO to
+the echo-area. This is a workaround for using the same format for
+both overlay echo-area while removing e.g. :background, to look good
+in the echo-area."
+  :group 'blamer
+  :type '(repeat symbol))
 
 (defvar blamer-idle-timer nil
   "Current timer before commit info showing.")
@@ -890,6 +895,7 @@ Return list of strings."
     (add-to-list 'blamer--overlays ov)))
 
 (defun blamer--render-echo-area (commit-info)
+  "Render COMMIT-INFO in the echo-area"
   (let* ((msg (blamer--format-commit-info (plist-get commit-info :commit-hash)
                                           (plist-get commit-info :commit-message)
                                           (plist-get commit-info :commit-author)
@@ -897,10 +903,10 @@ Return list of strings."
                                           (plist-get commit-info :commit-time)
                                           0
                                           commit-info))
-         (msg (substring msg blamer-echo-area-inset))
+         (msg (substring msg (or blamer-echo-area-inset 0)))
          (face-props (get-text-property 0 'face msg)))
 
-    (dolist (prop blamer-echo-area-strip-face-attributes  nil)
+    (dolist (prop blamer-echo-area-strip-face-attributes nil)
       (plist-put face-props prop (face-attribute 'default prop)))
     (put-text-property 0 (length msg) 'face face-props msg)
 
