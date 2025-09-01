@@ -909,8 +909,8 @@ Return list of strings."
     (dolist (prop blamer-echo-area-strip-face-attributes nil)
       (plist-put face-props prop (face-attribute 'default prop)))
     (put-text-property 0 (length msg) 'face face-props msg)
-
-    (message "%s" msg)))
+    (let ((message-log-max nil))
+      (message "%s" msg))))
 
 (defun blamer--render-right-overlay (commit-info render-point)
   "Render COMMIT-INFO as overlay at RENDER-POINT position."
